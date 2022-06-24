@@ -105,7 +105,8 @@ public class InputValidator {
             //Handle scanner closing
             catch (IllegalStateException e) {
                 out.println("The scanner was closed before this was executed!");
-                return GetValidCharacterInput(new Scanner(System.in)  );
+                out.println("Returning default response: 'N'");
+                return 'N';
             }
             //handle any other unexpected exceptions
             catch (Exception e) {

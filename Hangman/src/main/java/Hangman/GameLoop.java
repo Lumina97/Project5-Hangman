@@ -3,7 +3,6 @@ package Hangman;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-import static java.lang.System.exit;
 import static java.lang.System.out;
 
 public class GameLoop {
@@ -23,7 +22,6 @@ public class GameLoop {
     ArrayList<Character> rightLetters = new ArrayList<Character>();
 
     String word = "";
-    int maxTries = HangMen.length - 1;
     int currentTry = 0;
 
     //Grabs a new word and resets the game to starting settings
@@ -101,8 +99,8 @@ public class GameLoop {
     private void DisplayGuessedLetters() {
         if (wrongLetters.size() > 0) {
             out.println("Guessed Letters:");
-            for (int i = 0; i < wrongLetters.size(); i++) {
-                out.print(wrongLetters.get(i) + " , ");
+            for (Character wrongLetter : wrongLetters) {
+                out.print(wrongLetter + " , ");
             }
         }
         out.println("\n");
@@ -115,11 +113,11 @@ public class GameLoop {
         for (int i = 0; i < word.length(); i++) {
             if (rightLetters.contains(word.charAt(i)) == false) {
                 guessedTheWord = false;
+                break;
             }
         }
 
         return guessedTheWord;
-
     }
 
     private boolean EndOfGame(boolean guessedCorrectly) {
