@@ -1,6 +1,8 @@
 package Hangman;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Scanner;
 
 import static java.lang.System.out;
@@ -9,7 +11,8 @@ public class GameLoop {
 
     InputValidator inputValidator = new InputValidator();
 
-    String[] HangMen = {"+---+\n    |\n    |\n    |\n    |\n    |\n    |\n   ===\n",
+    String[] HangManArt = {
+            "+---+\n    |\n    |\n    |\n    |\n    |\n    |\n   ===\n",
             "+---+\nO   |\n    |\n    |\n    |\n    |\n    |\n   ===\n",
             "+---+\nO   |\n|   |\n    |\n    |\n    |\n    |\n   ===\n",
             "+---+\nO   |\n|   |\n|   |\n    |\n    |\n    |\n   ===\n",
@@ -18,129 +21,134 @@ public class GameLoop {
 
 
     String[] wordsToGuess = {"cat", "dog", "mouse", "horse", "house", "animal"};
-    ArrayList<Character> wrongLetters = new ArrayList<Character>();
-    ArrayList<Character> rightLetters = new ArrayList<Character>();
+    ArrayList<String> wrongLetters = new ArrayList<>();
+    ArrayList<String> rightLetters = new ArrayList<>();
 
     String word = "";
     int currentTry = 0;
 
     //Grabs a new word and resets the game to starting settings
-    public void StartGame() {
-        word = wordsToGuess[GenerateNewRandomNumberFromRange(0, wordsToGuess.length)];
-        out.println("H A N G M A N");
-        out.println(HangMen[currentTry]);
+    public void startGame() {
+        word = wordsToGuess[generateNewRandomNumberFromRange(0, wordsToGuess.length)];
         //reset variables
         currentTry = 0;
         wrongLetters.clear();
         rightLetters.clear();
 
-        Loop();
+        out.println("H A N G M A N");
+        out.println(HangManArt[currentTry]);
+
+        loop();
     }
 
     //Game loop
-    private void Loop() {
+    private void loop() {
         boolean isPlaying = true;
         boolean replay = false;
         do {
-            DisplayGuessedLetters();
-            PlayRound();
-            if (CheckHasFinishedGame()){
-                replay = EndOfGame(true);
-                isPlaying =  false;
+            displayGuessedLetters();
+            playRound();
+
+            GameState state = checkHasFinishedGame();
+            if (state != GameState.playing) {
+                replay = endOfGame(state);
+                isPlaying = false;
             }
         }
         while (isPlaying);
 
-        if(replay) StartGame();
+        if (replay) startGame();
     }
 
     // lets the player guess and evaluates said guess
-    private void PlayRound() {
+    private void playRound() {
         out.println("Guess a Letter!");
-        Character guess = inputValidator.GetValidCharacterInput(new Scanner(System.in));
+        String guess = inputValidator.GetValidCharacterInput(new Scanner(System.in)).toString();
 
         if (wrongLetters.contains(guess)) {
             out.println("You already guessed that letter! Try again!");
             return;
         }
 
-        if (word.contains(guess.toString())) {
+        if (word.contains(guess)) {
 
             out.println(guess + " was correct!");
             rightLetters.add(guess);
+            if (checkHasFinishedGame() == GameState.playing) {
+                printHangMan();
+                out.println("Your word so far:");
+                out.println(getCurrentWordWithGuesses());
+            }
 
-            PrintHangMan();
-            PrintCurrentWordWithGuesses();
         } else {
 
             wrongLetters.add(guess);
             out.println("Your guess was wrong.");
             currentTry++;
-            PrintHangMan();
 
-            PrintCurrentWordWithGuesses();
-        }
-    }
-
-    private void PrintHangMan() {
-        out.println(HangMen[currentTry]);
-    }
-
-    private void PrintCurrentWordWithGuesses() {
-        out.println("Your word so far:");
-        for (int i = 0; i < word.length(); i++) {
-            if (rightLetters.contains(word.charAt(i))) {
-                out.print(word.charAt((i)));
+            if (checkHasFinishedGame() == GameState.playing) {
+                printHangMan();
+                out.println(getCurrentWordWithGuesses());
             }
         }
-        out.println("\n");
     }
 
-    private void DisplayGuessedLetters() {
+    private void printHangMan() {
+        out.println(HangManArt[currentTry]);
+    }
+
+    private void displayGuessedLetters() {
         if (wrongLetters.size() > 0) {
             out.println("Guessed Letters:");
-            for (Character wrongLetter : wrongLetters) {
+            for (String wrongLetter : wrongLetters) {
                 out.print(wrongLetter + " , ");
             }
         }
         out.println("\n");
     }
 
-    private boolean CheckHasFinishedGame() {
+    private String getCurrentWordWithGuesses() {
+        //convert word to list
+        List<String> wordList = Arrays.stream(word.split("")).toList();
+        //stream over list and check if rightLetters contains current char
+        //print it out if yes and print a space if no
+        return wordList.stream()
+                .reduce("", (acc, element) -> {
+                    if (rightLetters.contains(element))
+                        return acc + " " + element;
 
-        boolean guessedTheWord = true;
-
-        for (int i = 0; i < word.length(); i++) {
-            if (rightLetters.contains(word.charAt(i)) == false) {
-                guessedTheWord = false;
-                break;
-            }
-        }
-
-        return guessedTheWord;
+                    return acc + " _ ";
+                });
     }
 
-    private boolean EndOfGame(boolean guessedCorrectly) {
+    private GameState checkHasFinishedGame() {
+        String guessedWord = getCurrentWordWithGuesses();
 
-        if (guessedCorrectly)
-            out.println("You have guessed the word: " + word);
+        if (currentTry >= HangManArt.length) return GameState.lost;
+
+        if (guessedWord.contains("_"))
+            return GameState.playing;
         else
+            return GameState.won;
+    }
+
+    private boolean endOfGame(GameState state) {
+
+        if (state == GameState.won)
+            out.println("You have guessed the word: " + word);
+        else if(state == GameState.lost)
             out.println("You didn't manage to guess the word...");
-        
-        
+
+
         out.println("Would you like to play again?");
         out.println("Yes or No ");
 
         String input = inputValidator.GetValidStringInput(new Scanner(System.in), new String[]{"Yes", "No", "yes", "no"});
 
-        if (input.equals("yes") || input.equals("Yes")) {
-           return true;
-        }
-
-        return false;
+        return input.equals("yes") || input.equals("Yes");
     }
 
-    private int GenerateNewRandomNumberFromRange(int minNumber, int maxNumber) {
+    private int generateNewRandomNumberFromRange(int minNumber, int maxNumber) {
         return (int) ((Math.random() * (maxNumber - minNumber)) + minNumber);
     }
 }
